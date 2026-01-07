@@ -20,10 +20,40 @@
 
         .shop-container { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
         
-        .product-card { 
-            background: white; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            width: 320px; overflow: hidden; display: flex; flex-direction: column;
-            transition: transform 0.3s ease;
+        /* Container des cartes */
+.shop-container { 
+    display: flex; 
+    flex-wrap: wrap; 
+    gap: 15px; /* Espace entre les cartes */
+    justify-content: center; 
+}
+
+/* La carte produit */
+.product-card { 
+    background: white; 
+    border-radius: 15px; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    /* Calcul pour 4 par ligne : (100% / 4) - gap */
+    width: calc(25% - 20px); 
+    min-width: 200px; /* Sécurité pour ne pas qu'elles soient trop fines */
+    overflow: hidden; 
+    display: flex; 
+    flex-direction: column;
+    transition: transform 0.3s ease;
+}
+
+/* Ajustement pour les tablettes (2 par ligne) */
+@media (max-width: 1024px) {
+    .product-card { width: calc(50% - 20px); }
+}
+
+/* Ajustement pour les téléphones (1 par ligne) */
+@media (max-width: 600px) {
+    .product-card { width: 100%; }
+}
+
+/* On réduit un peu la hauteur de l'image pour garder de la place */
+.gallery-container { position: relative; width: 100%; height: 200px; }
         }
 
         .gallery-container { position: relative; width: 100%; height: 250px; }
@@ -146,4 +176,5 @@
 </body>
 
 </html>
+
 
