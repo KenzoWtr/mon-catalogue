@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon Catalogue</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f8f9fa; padding: 20px; margin: 0; }
+        
+        /* Barre de recherche */
+        .search-container {
+            width: 100%; max-width: 500px; margin: 0 auto 30px auto;
+            position: sticky; top: 10px; z-index: 100;
+        }
+        #searchInput {
+            width: 100%; padding: 12px 20px; border-radius: 25px;
+            border: 2px solid #2ecc71; font-size: 1rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); outline: none;
+        }
+
+        .shop-container { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
+        
+        .product-card { 
+            background: white; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 320px; overflow: hidden; display: flex; flex-direction: column;
+            transition: transform 0.3s ease;
+        }
+
+        .gallery-container { position: relative; width: 100%; height: 250px; }
+        .image-gallery { 
+            display: flex; overflow-x: auto; scroll-snap-type: x mandatory; 
+            height: 100%; scrollbar-width: none; scroll-behavior: smooth;
+        }
+        .image-gallery::-webkit-scrollbar { display: none; }
+        
+        /* Curseur loupe sur les images */
+        .image-gallery img { 
+            width: 100%; flex-shrink: 0; object-fit: cover; 
+            scroll-snap-align: start; cursor: zoom-in; 
+        }
+
+        .nav-btn {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.8); border: none; border-radius: 50%;
+            width: 35px; height: 35px; cursor: pointer; font-weight: bold;
+            display: flex; align-items: center; justify-content: center; z-index: 10;
+        }
+        .prev { left: 10px; }
+        .next { right: 10px; }
+
+        .content { padding: 15px; }
+        .price { font-size: 1.2rem; font-weight: bold; color: #2ecc71; }
+        h2 { font-size: 1.1rem; margin: 10px 0; color: #333; }
+        p { font-size: 0.9rem; color: #666; line-height: 1.4; }
+
+        /* --- STYLE DE LA MODALE (AGRANDISSEMENT) --- */
+        #modal {
+            display: none; position: fixed; z-index: 1000;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.9);
+            justify-content: center; align-items: center;
+            cursor: zoom-out;
+        }
+        #modal img { max-width: 90%; max-height: 90%; border-radius: 10px; }
+        #closeModal {
+            position: absolute; top: 20px; right: 30px;
+            color: white; font-size: 40px; font-weight: bold; cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="search-container">
+        <input type="text" id="searchInput" placeholder="Rechercher une figurine..." onkeyup="filterProducts()">
+    </div>
+
+    <div id="shop" class="shop-container"></div>
+
+    <div id="modal" onclick="closeImage()">
+        <span id="closeModal">&times;</span>
+        <img id="modalImg">
+    </div>
+
+    <script>
+        const produits = [
+            { id: 1, nom: "Bitty Pop Hello Kitty", prix: "11€", description: "Pack 2 figurines version licorne. Neuf.", images: ["BITTYHELLO1.jpg", "BITTYHELLO2.jpg"] },
+            { id: 2, nom: "Figurine Catherine", prix: "55€", description: "figurine du jeux catherine classic ,import japon", images: ["CATHERINE1.jpg", "CATHERINE2.jpg"] },
+            { id: 3, nom: "Figurine Rem", prix: "15€", description: "figurine rem en parfait état de re:zero", images: ["FIGREM.jpg", "FIGREM2.jpg"] },
+            { id: 4, nom: "Figurine Duo Carnet Apothicaire", prix: "14€", description: "mini figurine carnet de l'apothicaire en parfait état ", images: ["MINIFIGCARNET1.jpg", "MINIFIGCARNET2.jpg"] },
+            { id: 5, nom: "Porte-clé Pop Power", prix: "6,5€", description: "Porte-clé Power Pop neuf en parfait état de chainsaw man", images: ["MINIPOPPOWER1.jpg", "MINIPOPPOWER2.jpg"] },
+            { id: 6, nom: "Album Enemy Rouge", prix: "20€", description: "Album de Twice Enemy version rouge neuf , avec photocard a l'intérieur", images: ["ENEMYROUGE1.jpg", "ENEMYROUGE2.jpg"] }
+        ];
+
+        const shop = document.getElementById('shop');
+
+        function displayProducts() {
+            shop.innerHTML = "";
+            produits.forEach(p => {
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                card.setAttribute('data-name', p.nom.toLowerCase());
+                
+                const galleryId = `gallery-${p.id}`;
+                // Ajout de l'événement onclick="openImage(this.src)" sur chaque image
+                let imagesHtml = p.images.map(img => `<img src="${img}" alt="${p.nom}" onclick="openImage(this.src)">`).join('');
+                
+                card.innerHTML = `
+                    <div class="gallery-container">
+                        ${p.images.length > 1 ? `
+                            <button class="nav-btn prev" onclick="document.getElementById('${galleryId}').scrollBy({left: -320, behavior: 'smooth'})">❮</button>
+                            <button class="nav-btn next" onclick="document.getElementById('${galleryId}').scrollBy({left: 320, behavior: 'smooth'})">❯</button>
+                        ` : ''}
+                        <div class="image-gallery" id="${galleryId}">${imagesHtml}</div>
+                    </div>
+                    <div class="content">
+                        <div class="price">${p.prix}</div>
+                        <h2>${p.nom}</h2>
+                        <p>${p.description}</p>
+                    </div>
+                `;
+                shop.appendChild(card);
+            });
+        }
+
+        // --- FONCTIONS POUR LA MODALE ---
+        function openImage(src) {
+            document.getElementById('modal').style.display = "flex";
+            document.getElementById('modalImg').src = src;
+        }
+
+        function closeImage() {
+            document.getElementById('modal').style.display = "none";
+        }
+
+        function filterProducts() {
+            const input = document.getElementById('searchInput').value.toLowerCase();
+            const cards = document.getElementsByClassName('product-card');
+            Array.from(cards).forEach(card => {
+                const name = card.getAttribute('data-name');
+                card.style.display = name.includes(input) ? "flex" : "none";
+            });
+        }
+
+        displayProducts();
+    </script>
+</body>
+</html>
