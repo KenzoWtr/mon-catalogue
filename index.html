@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestion de Stock Figurines</title>
+    <title>Gestion Stock Persistante</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f8f9fa; padding: 20px; margin: 0; }
         
@@ -30,16 +30,14 @@
 
         .gallery-container { position: relative; width: 100%; height: 200px; background: #eee; }
         .image-gallery { 
-            display: flex; overflow-x: auto; scroll-snap-type: x mandatory; 
-            height: 100%; scrollbar-width: none;
+            display: flex; overflow-x: auto; scrollbar-width: none;
         }
-        .image-gallery img { width: 100%; flex-shrink: 0; object-fit: cover; scroll-snap-align: start; }
+        .image-gallery img { width: 100%; flex-shrink: 0; object-fit: cover; }
 
         .content { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; }
         .price { font-size: 1.2rem; font-weight: bold; color: #2ecc71; }
-        h2 { font-size: 1rem; margin: 10px 0; color: #333; }
+        h2 { font-size: 1rem; margin: 10px 0; color: #333; height: 2.5em; overflow: hidden; }
         
-        /* --- STYLE DU COMPTEUR --- */
         .counter-container {
             margin-top: auto;
             border-top: 1px solid #eee;
@@ -82,19 +80,41 @@
     </div>
 
     <script>
-        // Le stock est défini ici pour chaque objet
-        const produits = [
-            { id: 1, nom: "Bitty Pop Hello Kitty", prix: "11€", stock: 1, images: ["IMG/BITTYHELLO1.jpg"] },
-            { id: 2, nom: "Figurine Nendoroid Sayori", prix: "45€", stock: 1, images: ["IMG/NENDOSAYORI.jpg"] },
-            { id: 3, nom: "Figurine Nendoroid Mao Mao", prix: "45€", stock: 1, images: ["IMG/NENDOCARNET2.jpg"] },
-            { id: 4, nom: "Figurine Duo Carnet Apothicaire", prix: "14€", stock: 1, images: ["IMG/MINIFIGCARNET1.jpg"] },
-            { id: 5, nom: "Porte-clé Pop Power", prix: "6,5€", stock: 5, images: ["IMG/MINIPOPPOWER1.jpg"] },
-            { id: 6, nom: "Album Twice Enemy Rouge", prix: "20€", stock: 1, images: ["IMG/ENEMYROUGE1.jpg"] },
-            { id: 7, nom: "Album Twice Enemy Jaune", prix: "20€", stock: 1, images: ["IMG/ENEMYJAUNE1.jpg"] },
-            { id: 8, nom: "Album Twice This is for", prix: "16€", stock: 1, images: ["IMG/THISISFOR1.jpg"] },
-            { id: 9, nom: "Peluche Freddy", prix: "15€", stock: 2, images: ["IMG/FREDDY1.jpg"] },
-            { id: 10, nom: "Peluche Bunny", prix: "10€", stock: 3, images: ["IMG/BUNNY1.jpg"] }
+        // Liste initiale des produits
+        let produits = [
+            { id: 1, nom: "Bitty Pop Hello Kitty", prix: "11€", stock: 0, images: ["IMG/BITTYHELLO1.jpg"] },
+            { id: 2, nom: "Figurine Nendoroid Sayori", prix: "45€", stock: 0, images: ["IMG/NENDOSAYORI.jpg"] },
+            { id: 3, nom: "Figurine Nendoroid Mao Mao", prix: "45€", stock: 0, images: ["IMG/NENDOCARNET2.jpg"] },
+            { id: 4, nom: "Figurine Duo Carnet Apothicaire", prix: "14€", stock: 0, images: ["IMG/MINIFIGCARNET1.jpg"] },
+            { id: 5, nom: "Porte-clé Pop Power", prix: "6,5€", stock: 0, images: ["IMG/MINIPOPPOWER1.jpg"] },
+            { id: 6, nom: "Album Twice Enemy Rouge", prix: "20€", stock: 0, images: ["IMG/ENEMYROUGE1.jpg"] },
+            { id: 7, nom: "Album Twice Enemy Jaune", prix: "20€", stock: 0, images: ["IMG/ENEMYJAUNE1.jpg"] },
+            { id: 8, nom: "Album Twice This is for", prix: "16€", stock: 0, images: ["IMG/THISISFOR1.jpg"] },
+            { id: 9, nom: "Peluche Freddy", prix: "15€", stock: 0, images: ["IMG/FREDDY1.jpg"] },
+            { id: 10, nom: "Peluche Bunny", prix: "10€", stock: 0, images: ["IMG/BUNNY1.jpg"] }
         ];
+
+        // 1. Charger les données sauvegardées au lancement
+        function loadStock() {
+            const savedStock = localStorage.getItem('monCatalogueStock');
+            if (savedStock) {
+                const stockData = JSON.parse(savedStock);
+                produits.forEach(p => {
+                    if (stockData[p.id] !== undefined) {
+                        p.stock = stockData[p.id];
+                    }
+                });
+            }
+        }
+
+        // 2. Sauvegarder les données dans le navigateur
+        function saveStock() {
+            const stockToSave = {};
+            produits.forEach(p => {
+                stockToSave[p.id] = p.stock;
+            });
+            localStorage.setItem('monCatalogueStock', JSON.stringify(stockToSave));
+        }
 
         function displayProducts() {
             const shop = document.getElementById('shop');
@@ -113,7 +133,6 @@
                     <div class="content">
                         <div class="price">${p.prix}</div>
                         <h2>${p.nom}</h2>
-                        
                         <div class="counter-container">
                             <span class="stock-label">STOCK DISPONIBLE</span>
                             <div class="counter-controls">
@@ -128,7 +147,6 @@
             });
         }
 
-        // Cette fonction gère le clic sur les boutons + et -
         function changeQty(id, delta) {
             const index = produits.findIndex(p => p.id === id);
             if (index !== -1) {
@@ -136,6 +154,7 @@
                 if (nouveauStock >= 0) {
                     produits[index].stock = nouveauStock;
                     document.getElementById(`qty-${id}`).innerText = nouveauStock;
+                    saveStock(); // Sauvegarde automatique à chaque clic
                 }
             }
         }
@@ -154,11 +173,12 @@
             });
         }
 
+        // Lancement : Charger puis Afficher
+        loadStock();
         displayProducts();
     </script>
 </body>
 </html>
-
 
 
 
