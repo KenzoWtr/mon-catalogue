@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestion de Stock Figurines</title>
+    <title>Gestion de Stock & Zoom</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f8f9fa; padding: 20px; margin: 0; }
         
@@ -29,17 +29,12 @@
         }
 
         .gallery-container { position: relative; width: 100%; height: 200px; background: #eee; }
-        .image-gallery { 
-            display: flex; overflow-x: auto; scroll-snap-type: x mandatory; 
-            height: 100%; scrollbar-width: none;
-        }
-        .image-gallery img { width: 100%; flex-shrink: 0; object-fit: cover; scroll-snap-align: start; }
+        .image-gallery img { width: 100%; height: 100%; object-fit: cover; cursor: zoom-in; }
 
         .content { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; }
         .price { font-size: 1.2rem; font-weight: bold; color: #2ecc71; }
-        h2 { font-size: 1rem; margin: 10px 0; color: #333; }
+        h2 { font-size: 1rem; margin: 10px 0; color: #333; height: 2.5em; overflow: hidden; }
         
-        /* --- STYLE DU COMPTEUR --- */
         .counter-container {
             margin-top: auto;
             border-top: 1px solid #eee;
@@ -61,12 +56,14 @@
         .btn-qty:hover { background: #27ae60; }
         .qty-value { font-size: 1.2rem; font-weight: bold; color: #333; }
 
+        /* --- STYLE DE LA MODAL (ZOOM) --- */
         .modal {
             display: none; position: fixed; z-index: 1000;
             top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.8); justify-content: center; align-items: center;
+            background-color: rgba(0,0,0,0.9); justify-content: center; align-items: center;
         }
-        #modalImg { max-width: 90%; max-height: 90%; border-radius: 10px; }
+        #modalImg { max-width: 90%; max-height: 90%; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        .close-zoom { position: absolute; top: 20px; right: 30px; color: white; font-size: 40px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -78,11 +75,11 @@
     <div id="shop" class="shop-container"></div>
 
     <div id="imageModal" class="modal" onclick="this.style.display='none'">
+        <span class="close-zoom">&times;</span>
         <img id="modalImg" src="">
     </div>
 
     <script>
-        // Le stock est défini ici pour chaque objet
         const produits = [
             { id: 1, nom: "Bitty Pop Hello Kitty", prix: "11€", stock: 1, images: ["IMG/BITTYHELLO1.jpg"] },
             { id: 2, nom: "Figurine Nendoroid Sayori", prix: "45€", stock: 1, images: ["IMG/NENDOSAYORI.jpg"] },
@@ -96,29 +93,32 @@
             { id: 10, nom: "Peluche Bunny", prix: "10€", stock: 3, images: ["IMG/BUNNY1.jpg"] }
         ];
 
+        // Charger les stocks sauvegardés au démarrage
+        const savedStocks = JSON.parse(localStorage.getItem('mes_stocks_sauves')) || {};
+
         function displayProducts() {
             const shop = document.getElementById('shop');
             shop.innerHTML = "";
             produits.forEach(p => {
+                // Utilise la valeur sauvegardée si elle existe, sinon utilise la valeur par défaut
+                const qteAffichee = savedStocks[p.id] !== undefined ? savedStocks[p.id] : p.stock;
+                
                 const card = document.createElement('div');
                 card.className = 'product-card';
                 card.setAttribute('data-name', p.nom.toLowerCase());
                 
                 card.innerHTML = `
                     <div class="gallery-container">
-                        <div class="image-gallery">
-                            <img src="${p.images[0]}" onclick="openImage('${p.images[0]}')" onerror="this.src='https://via.placeholder.com/300x200?text=Image'">
-                        </div>
+                        <img src="${p.images[0]}" onclick="openImage('${p.images[0]}')" onerror="this.src='https://via.placeholder.com/300x200?text=Image'">
                     </div>
                     <div class="content">
                         <div class="price">${p.prix}</div>
                         <h2>${p.nom}</h2>
-                        
                         <div class="counter-container">
                             <span class="stock-label">STOCK DISPONIBLE</span>
                             <div class="counter-controls">
                                 <button class="btn-qty" onclick="changeQty(${p.id}, -1)">−</button>
-                                <span class="qty-value" id="qty-${p.id}">${p.stock}</span>
+                                <span class="qty-value" id="qty-${p.id}">${qteAffichee}</span>
                                 <button class="btn-qty" onclick="changeQty(${p.id}, 1)">+</button>
                             </div>
                         </div>
@@ -128,15 +128,16 @@
             });
         }
 
-        // Cette fonction gère le clic sur les boutons + et -
         function changeQty(id, delta) {
-            const index = produits.findIndex(p => p.id === id);
-            if (index !== -1) {
-                let nouveauStock = produits[index].stock + delta;
-                if (nouveauStock >= 0) {
-                    produits[index].stock = nouveauStock;
-                    document.getElementById(`qty-${id}`).innerText = nouveauStock;
-                }
+            const el = document.getElementById(`qty-${id}`);
+            let current = parseInt(el.innerText);
+            let nouveau = current + delta;
+            
+            if (nouveau >= 0) {
+                el.innerText = nouveau;
+                // Sauvegarde immédiate
+                savedStocks[id] = nouveau;
+                localStorage.setItem('mes_stocks_sauves', JSON.stringify(savedStocks));
             }
         }
 
