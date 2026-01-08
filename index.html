@@ -3,142 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestion Stock Persistante</title>
+    <title>Catalogue Figurines - Stock Sauvegardé</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f8f9fa; padding: 20px; margin: 0; }
-        
-        .search-container {
-            width: 100%; max-width: 500px; margin: 0 auto 30px auto;
-            position: sticky; top: 10px; z-index: 100;
-        }
-        #searchInput {
-            width: 100%; padding: 12px 20px; border-radius: 25px;
-            border: 2px solid #2ecc71; font-size: 1rem;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1); outline: none;
-        }
-
-        .shop-container { 
-            display: flex; flex-wrap: wrap; gap: 20px; 
-            justify-content: center; max-width: 1400px; margin: 0 auto;
-        }
-        
-        .product-card { 
-            background: white; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            width: 280px; overflow: hidden; 
-            display: flex; flex-direction: column; transition: transform 0.3s ease;
-        }
-
+        .search-container { width: 100%; max-width: 500px; margin: 0 auto 30px auto; position: sticky; top: 10px; z-index: 100; }
+        #searchInput { width: 100%; padding: 12px 20px; border-radius: 25px; border: 2px solid #2ecc71; font-size: 1rem; box-shadow: 0 4px 10px rgba(0,0,0,0.1); outline: none; }
+        .shop-container { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; max-width: 1400px; margin: 0 auto; }
+        .product-card { background: white; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 280px; overflow: hidden; display: flex; flex-direction: column; }
         .gallery-container { position: relative; width: 100%; height: 200px; background: #eee; }
-        .image-gallery { 
-            display: flex; overflow-x: auto; scrollbar-width: none;
-        }
-        .image-gallery img { width: 100%; flex-shrink: 0; object-fit: cover; }
-
+        .image-gallery img { width: 100%; height: 100%; object-fit: cover; }
         .content { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; }
         .price { font-size: 1.2rem; font-weight: bold; color: #2ecc71; }
         h2 { font-size: 1rem; margin: 10px 0; color: #333; height: 2.5em; overflow: hidden; }
-        
-        .counter-container {
-            margin-top: auto;
-            border-top: 1px solid #eee;
-            padding-top: 15px;
-        }
-        .stock-label {
-            display: block; font-size: 0.75rem; color: #888; 
-            margin-bottom: 8px; text-align: center; font-weight: bold;
-        }
-        .counter-controls {
-            display: flex; align-items: center; justify-content: space-between;
-            background: #f1f1f1; border-radius: 10px; padding: 5px;
-        }
-        .btn-qty {
-            background: #2ecc71; color: white; border: none;
-            width: 40px; height: 40px; border-radius: 8px;
-            cursor: pointer; font-size: 1.5rem; font-weight: bold;
-        }
-        .btn-qty:hover { background: #27ae60; }
+        .counter-container { margin-top: auto; border-top: 1px solid #eee; padding-top: 15px; }
+        .stock-label { display: block; font-size: 0.75rem; color: #888; margin-bottom: 8px; text-align: center; font-weight: bold; }
+        .counter-controls { display: flex; align-items: center; justify-content: space-between; background: #f1f1f1; border-radius: 10px; padding: 5px; }
+        .btn-qty { background: #2ecc71; color: white; border: none; width: 40px; height: 40px; border-radius: 8px; cursor: pointer; font-size: 1.5rem; font-weight: bold; }
         .qty-value { font-size: 1.2rem; font-weight: bold; color: #333; }
-
-        .modal {
-            display: none; position: fixed; z-index: 1000;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.8); justify-content: center; align-items: center;
-        }
-        #modalImg { max-width: 90%; max-height: 90%; border-radius: 10px; }
     </style>
 </head>
 <body>
 
     <div class="search-container">
-        <input type="text" id="searchInput" placeholder="Rechercher une figurine..." onkeyup="filterProducts()">
+        <input type="text" id="searchInput" placeholder="Rechercher..." onkeyup="filterProducts()">
     </div>
 
     <div id="shop" class="shop-container"></div>
 
-    <div id="imageModal" class="modal" onclick="this.style.display='none'">
-        <img id="modalImg" src="">
-    </div>
-
     <script>
-        // Liste initiale des produits
-        let produits = [
-            { id: 1, nom: "Bitty Pop Hello Kitty", prix: "11€", stock: 0, images: ["IMG/BITTYHELLO1.jpg"] },
-            { id: 2, nom: "Figurine Nendoroid Sayori", prix: "45€", stock: 0, images: ["IMG/NENDOSAYORI.jpg"] },
-            { id: 3, nom: "Figurine Nendoroid Mao Mao", prix: "45€", stock: 0, images: ["IMG/NENDOCARNET2.jpg"] },
-            { id: 4, nom: "Figurine Duo Carnet Apothicaire", prix: "14€", stock: 0, images: ["IMG/MINIFIGCARNET1.jpg"] },
-            { id: 5, nom: "Porte-clé Pop Power", prix: "6,5€", stock: 0, images: ["IMG/MINIPOPPOWER1.jpg"] },
-            { id: 6, nom: "Album Twice Enemy Rouge", prix: "20€", stock: 0, images: ["IMG/ENEMYROUGE1.jpg"] },
-            { id: 7, nom: "Album Twice Enemy Jaune", prix: "20€", stock: 0, images: ["IMG/ENEMYJAUNE1.jpg"] },
-            { id: 8, nom: "Album Twice This is for", prix: "16€", stock: 0, images: ["IMG/THISISFOR1.jpg"] },
-            { id: 9, nom: "Peluche Freddy", prix: "15€", stock: 0, images: ["IMG/FREDDY1.jpg"] },
-            { id: 10, nom: "Peluche Bunny", prix: "10€", stock: 0, images: ["IMG/BUNNY1.jpg"] }
+        // Ta liste de produits
+        const produitsInitiaux = [
+            { id: 1, nom: "Bitty Pop Hello Kitty", prix: "11€", images: ["IMG/BITTYHELLO1.jpg"] },
+            { id: 2, nom: "Figurine Nendoroid Sayori", prix: "45€", images: ["IMG/NENDOSAYORI.jpg"] },
+            { id: 3, nom: "Figurine Nendoroid Mao Mao", prix: "45€", images: ["IMG/NENDOCARNET2.jpg"] },
+            { id: 4, nom: "Figurine Duo Carnet Apothicaire", prix: "14€", images: ["IMG/MINIFIGCARNET1.jpg"] },
+            { id: 5, nom: "Porte-clé Pop Power", prix: "6,5€", images: ["IMG/MINIPOPPOWER1.jpg"] },
+            { id: 6, nom: "Album Twice Enemy Rouge", prix: "20€", images: ["IMG/ENEMYROUGE1.jpg"] },
+            { id: 7, nom: "Album Twice Enemy Jaune", prix: "20€", images: ["IMG/ENEMYJAUNE1.jpg"] },
+            { id: 8, nom: "Album Twice This is for", prix: "16€", images: ["IMG/THISISFOR1.jpg"] },
+            { id: 9, nom: "Peluche Freddy", prix: "15€", images: ["IMG/FREDDY1.jpg"] },
+            { id: 10, nom: "Peluche Bunny", prix: "10€", images: ["IMG/BUNNY1.jpg"] }
         ];
 
-        // 1. Charger les données sauvegardées au lancement
-        function loadStock() {
-            const savedStock = localStorage.getItem('monCatalogueStock');
-            if (savedStock) {
-                const stockData = JSON.parse(savedStock);
-                produits.forEach(p => {
-                    if (stockData[p.id] !== undefined) {
-                        p.stock = stockData[p.id];
-                    }
-                });
-            }
-        }
-
-        // 2. Sauvegarder les données dans le navigateur
-        function saveStock() {
-            const stockToSave = {};
-            produits.forEach(p => {
-                stockToSave[p.id] = p.stock;
-            });
-            localStorage.setItem('monCatalogueStock', JSON.stringify(stockToSave));
-        }
+        // Charger les stocks depuis le localStorage ou mettre à 0 par défaut
+        let stocksSaved = JSON.parse(localStorage.getItem('stocks_figurines')) || {};
 
         function displayProducts() {
             const shop = document.getElementById('shop');
             shop.innerHTML = "";
-            produits.forEach(p => {
+            
+            produitsInitiaux.forEach(p => {
+                // On récupère la valeur sauvegardée ou 0
+                const quantite = stocksSaved[p.id] !== undefined ? stocksSaved[p.id] : 0;
+                
                 const card = document.createElement('div');
                 card.className = 'product-card';
                 card.setAttribute('data-name', p.nom.toLowerCase());
                 
                 card.innerHTML = `
                     <div class="gallery-container">
-                        <div class="image-gallery">
-                            <img src="${p.images[0]}" onclick="openImage('${p.images[0]}')" onerror="this.src='https://via.placeholder.com/300x200?text=Image'">
-                        </div>
+                        <div class="image-gallery"><img src="${p.images[0]}" onerror="this.src='https://via.placeholder.com/280x200'"></div>
                     </div>
                     <div class="content">
                         <div class="price">${p.prix}</div>
                         <h2>${p.nom}</h2>
                         <div class="counter-container">
-                            <span class="stock-label">STOCK DISPONIBLE</span>
+                            <span class="stock-label">STOCK</span>
                             <div class="counter-controls">
-                                <button class="btn-qty" onclick="changeQty(${p.id}, -1)">−</button>
-                                <span class="qty-value" id="qty-${p.id}">${p.stock}</span>
-                                <button class="btn-qty" onclick="changeQty(${p.id}, 1)">+</button>
+                                <button class="btn-qty" onclick="updateQty(${p.id}, -1)">−</button>
+                                <span class="qty-value" id="qty-${p.id}">${quantite}</span>
+                                <button class="btn-qty" onclick="updateQty(${p.id}, 1)">+</button>
                             </div>
                         </div>
                     </div>
@@ -147,21 +81,20 @@
             });
         }
 
-        function changeQty(id, delta) {
-            const index = produits.findIndex(p => p.id === id);
-            if (index !== -1) {
-                let nouveauStock = produits[index].stock + delta;
-                if (nouveauStock >= 0) {
-                    produits[index].stock = nouveauStock;
-                    document.getElementById(`qty-${id}`).innerText = nouveauStock;
-                    saveStock(); // Sauvegarde automatique à chaque clic
-                }
+        function updateQty(id, change) {
+            // Initialiser si n'existe pas
+            if (stocksSaved[id] === undefined) stocksSaved[id] = 0;
+            
+            let nouveauStock = stocksSaved[id] + change;
+            
+            if (nouveauStock >= 0) {
+                stocksSaved[id] = nouveauStock;
+                // Mise à jour visuelle
+                document.getElementById(`qty-${id}`).innerText = nouveauStock;
+                // Sauvegarde réelle dans le navigateur
+                localStorage.setItem('stocks_figurines', JSON.stringify(stocksSaved));
+                console.log("Stock mis à jour pour l'ID " + id + " : " + nouveauStock);
             }
-        }
-
-        function openImage(src) {
-            document.getElementById('modalImg').src = src;
-            document.getElementById('imageModal').style.display = 'flex';
         }
 
         function filterProducts() {
@@ -173,12 +106,12 @@
             });
         }
 
-        // Lancement : Charger puis Afficher
-        loadStock();
+        // Démarrage
         displayProducts();
     </script>
 </body>
 </html>
+
 
 
 
