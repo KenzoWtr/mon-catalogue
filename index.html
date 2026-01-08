@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mon Catalogue Figurines</title>
+    <title>Mon Catalogue Figurines - Gestion Stock</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f8f9fa; padding: 20px; margin: 0; }
         
@@ -53,10 +53,40 @@
         h2 { font-size: 1rem; margin: 10px 0; color: #333; height: 2.4em; overflow: hidden; }
         p { font-size: 0.85rem; color: #666; line-height: 1.4; margin-bottom: 15px; }
 
-        .contact-btn {
-            background-color: #2ecc71; color: white; border: none;
-            padding: 10px; border-radius: 8px; cursor: pointer;
-            font-weight: bold; width: 100%; margin-top: auto;
+        /* --- NOUVEAU STYLE COMPTEUR --- */
+        .stock-control {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #f1f1f1;
+            border-radius: 10px;
+            padding: 5px;
+            margin-top: auto;
+        }
+        .stock-btn {
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            width: 35px;
+            height: 35px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        .stock-btn:hover { background-color: #27ae60; }
+        .stock-value {
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #333;
+        }
+        .stock-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: #999;
+            margin-bottom: 5px;
+            display: block;
         }
 
         .modal {
@@ -65,12 +95,7 @@
             background-color: rgba(0,0,0,0.8);
             justify-content: center; align-items: center;
         }
-        .modal-content {
-            background: white; padding: 30px; border-radius: 15px;
-            max-width: 400px; width: 90%; text-align: center; position: relative;
-        }
         #modalImg { max-width: 90%; max-height: 90%; border-radius: 10px; }
-        .close-btn { position: absolute; top: 10px; right: 15px; font-size: 25px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -82,31 +107,22 @@
     <div id="shop" class="shop-container"></div>
 
     <div id="imageModal" class="modal" onclick="this.style.display='none'">
-        <span class="close-btn" style="color:white; top:20px; right:30px;">&times;</span>
         <img id="modalImg" src="">
     </div>
 
-    <div id="contactModal" class="modal" onclick="this.style.display='none'">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <span class="close-btn" onclick="document.getElementById('contactModal').style.display='none'">&times;</span>
-            <h3>Me contacter</h3>
-            <p><strong>Adresse mail :</strong><br>chaftmine3.0@gmail.com</p>
-            <p><strong>Mon Vinted :</strong><br>KenzoWtr</p>
-        </div>
-    </div>
-
     <script>
+        // Ajout d'une propriété "stock" à chaque produit
         const produits = [
-            { id: 1, nom: "Bitty Pop Hello Kitty", prix: "11€", description: "Pack 2 figurines version licorne. Neuf.", images: ["IMG/BITTYHELLO1.jpg", "IMG/BITTYHELLO2.jpg"] },
-            { id: 2, nom: "Figurine Nendoroid Sayori", prix: "45€", description: "Figurine du jeu DOKI DOKI LITTERATURE CLUB, état parfait (boîte abîmée).", images: ["IMG/NENDOSAYORI.jpg", "IMG/NENDOSAYORI2.jpg"] },
-            { id: 3, nom: "Figurine Nendoroid Mao Mao", prix: "45€", description: "Figurine Nendoroid Mao Mao en parfait état.", images: ["IMG/NENDOCARNET2.jpg", "IMG/NENDOCARNET3.jpg"] },
-            { id: 4, nom: "Figurine Duo Carnet Apothicaire", prix: "14€", description: "Mini figurines en parfait état.", images: ["IMG/MINIFIGCARNET1.jpg", "IMG/MINIFIGCARNET2.jpg"] },
-            { id: 5, nom: "Porte-clé Pop Power", prix: "6,5€", description: "Porte-clé Power Pop neuf (Chainsaw Man).", images: ["IMG/MINIPOPPOWER1.jpg", "IMG/MINIPOPPOWER2.jpg"] },
-            { id: 6, nom: "Album Twice Enemy Rouge", prix: "20€", description: "Album Twice Enemy version rouge avec photocard.", images: ["IMG/ENEMYROUGE1.jpg", "IMG/ENEMYROUGE2.jpg"] },
-            { id: 7, nom: "Album Twice Enemy Jaune", prix: "20€", description: "Album Twice Enemy version jaune avec photocard.", images: ["IMG/ENEMYJAUNE1.jpg", "IMG/ENEMYJAUNE2.jpg"] },
-            { id: 8, nom: "Album Twice This is for", prix: "16€", description: "Album Twice This is for ver. Nayeon avec photocard.", images: ["IMG/THISISFOR1.jpg", "IMG/THISISFOR2.jpg"] },
-            { id: 9, nom: "Peluche Freddy", prix: "15€", description: "Peluche Freddy neuve de la série Fnaf.", images: ["IMG/FREDDY1.jpg", "IMG/FREDDY2.jpg"] },
-            { id: 10, nom: "Peluche Bunny", prix: "10€", description: "Peluche Bunny neuve de la série Fnaf.", images: ["IMG/BUNNY1.jpg", "IMG/BUNNY2.jpg"] }
+            { id: 1, nom: "Bitty Pop Hello Kitty", prix: "11€", stock: 1, description: "Pack 2 figurines version licorne. Neuf.", images: ["IMG/BITTYHELLO1.jpg", "IMG/BITTYHELLO2.jpg"] },
+            { id: 2, nom: "Figurine Nendoroid Sayori", prix: "45€", stock: 1, description: "Figurine du jeu DOKI DOKI LITTERATURE CLUB, état parfait (boîte abîmée).", images: ["IMG/NENDOSAYORI.jpg", "IMG/NENDOSAYORI2.jpg"] },
+            { id: 3, nom: "Figurine Nendoroid Mao Mao", prix: "45€", stock: 1, description: "Figurine Nendoroid Mao Mao en parfait état.", images: ["IMG/NENDOCARNET2.jpg", "IMG/NENDOCARNET3.jpg"] },
+            { id: 4, nom: "Figurine Duo Carnet Apothicaire", prix: "14€", stock: 1, description: "Mini figurines en parfait état.", images: ["IMG/MINIFIGCARNET1.jpg", "IMG/MINIFIGCARNET2.jpg"] },
+            { id: 5, nom: "Porte-clé Pop Power", prix: "6,5€", stock: 5, description: "Porte-clé Power Pop neuf (Chainsaw Man).", images: ["IMG/MINIPOPPOWER1.jpg", "IMG/MINIPOPPOWER2.jpg"] },
+            { id: 6, nom: "Album Twice Enemy Rouge", prix: "20€", stock: 1, description: "Album Twice Enemy version rouge avec photocard.", images: ["IMG/ENEMYROUGE1.jpg", "IMG/ENEMYROUGE2.jpg"] },
+            { id: 7, nom: "Album Twice Enemy Jaune", prix: "20€", stock: 1, description: "Album Twice Enemy version jaune avec photocard.", images: ["IMG/ENEMYJAUNE1.jpg", "IMG/ENEMYJAUNE2.jpg"] },
+            { id: 8, nom: "Album Twice This is for", prix: "16€", stock: 1, description: "Album Twice This is for ver. Nayeon avec photocard.", images: ["IMG/THISISFOR1.jpg", "IMG/THISISFOR2.jpg"] },
+            { id: 9, nom: "Peluche Freddy", prix: "15€", stock: 2, description: "Peluche Freddy neuve de la série Fnaf.", images: ["IMG/FREDDY1.jpg", "IMG/FREDDY2.jpg"] },
+            { id: 10, nom: "Peluche Bunny", prix: "10€", stock: 3, description: "Peluche Bunny neuve de la série Fnaf.", images: ["IMG/BUNNY1.jpg", "IMG/BUNNY2.jpg"] }
         ];
 
         function displayProducts() {
@@ -132,11 +148,30 @@
                         <div class="price">${p.prix}</div>
                         <h2>${p.nom}</h2>
                         <p>${p.description}</p>
-                        <button class="contact-btn" onclick="document.getElementById('contactModal').style.display='flex'">Contacter</button>
+                        
+                        <span class="stock-label">Quantité en stock</span>
+                        <div class="stock-control">
+                            <button class="stock-btn" onclick="updateStock(${p.id}, -1)">−</button>
+                            <span class="stock-value" id="stock-${p.id}">${p.stock}</span>
+                            <button class="stock-btn" onclick="updateStock(${p.id}, 1)">+</button>
+                        </div>
                     </div>
                 `;
                 shop.appendChild(card);
             });
+        }
+
+        // Fonction pour mettre à jour le stock
+        function updateStock(id, change) {
+            const produit = produits.find(p => p.id === id);
+            if (produit) {
+                const nouveauStock = produit.stock + change;
+                // On empêche de descendre en dessous de 0
+                if (nouveauStock >= 0) {
+                    produit.stock = nouveauStock;
+                    document.getElementById(`stock-${id}`).innerText = nouveauStock;
+                }
+            }
         }
 
         function openImage(src) {
@@ -157,7 +192,6 @@
     </script>
 </body>
 </html>
-
 
 
 
